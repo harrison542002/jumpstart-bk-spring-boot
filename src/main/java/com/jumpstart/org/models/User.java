@@ -2,6 +2,8 @@ package com.jumpstart.org.models;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.util.List;
@@ -21,6 +23,7 @@ public class User {
     private String email;
     @OneToOne(cascade=CascadeType.ALL, mappedBy = "user")
     private Cart cart;
-    @OneToMany(cascade = CascadeType.MERGE, mappedBy = "user", fetch = FetchType.LAZY)
+    @LazyCollection(LazyCollectionOption.TRUE)
+    @OneToMany(cascade = CascadeType.MERGE, mappedBy = "user")
     private List<UserRole> userRoles;
 }
