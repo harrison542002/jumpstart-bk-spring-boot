@@ -13,6 +13,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 
 public class UserPrincipal implements UserDetails, OAuth2User{
@@ -33,19 +35,19 @@ public class UserPrincipal implements UserDetails, OAuth2User{
 		List<GrantedAuthority> grantedAuthorities = new ArrayList<GrantedAuthority>();
 		authorities.forEach((auth) -> grantedAuthorities.add(new SimpleGrantedAuthority(auth)));
 		this.authorities = grantedAuthorities;
-		System.out.println(grantedAuthorities.size());
 	}
-	
+
 	public static UserPrincipal createUser(User user) {
 		
 		if(user.getUserRoles() == null) {
 			return new UserPrincipal(user.getEmail(), user.getPassword(),
 					new ArrayList<GrantedAuthority>());
 		}
+
 		return new UserPrincipal(user.getEmail(), user.getPassword(),
 				user.getUserRoles().stream().map((userRole) -> userRole.getRole().getRoleName()).collect(Collectors.toList()));
 	}
-	
+
 	public static UserPrincipal create(User user, Map<String, Object> attributes) {
 		UserPrincipal userPrincipal = UserPrincipal.createUser(user);
 		userPrincipal.setAttributes(attributes);

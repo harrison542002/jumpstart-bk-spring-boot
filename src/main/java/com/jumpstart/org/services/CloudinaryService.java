@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 
 @Service
@@ -28,6 +30,20 @@ public class CloudinaryService {
             logger.error("The user " + " failed to load to Cloudinary the image file: " + file.getName());
             logger.error(ex.getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Delete image file from cloudinary
+     */
+    public void delete(String imgURL){
+        String[] data = imgURL.split("/");
+        String publicId = data[data.length - 1];
+        try {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        } catch (IOException ex) {
+            logger.error("The user " + " failed to delete to Cloudinary the image file with id: " + publicId);
+            logger.error(ex.getMessage());
         }
     }
 }

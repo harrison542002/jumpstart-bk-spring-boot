@@ -3,6 +3,7 @@ package com.jumpstart.org.services;
 import com.jumpstart.org.models.Brand;
 import com.jumpstart.org.models.Product;
 import com.jumpstart.org.models.ProductImages;
+import com.jumpstart.org.payload.BrandDto;
 import com.jumpstart.org.payload.ProductDto;
 import com.jumpstart.org.payload.ProductRequest;
 import com.jumpstart.org.repositories.BrandRepository;
@@ -11,10 +12,11 @@ import com.jumpstart.org.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +30,8 @@ public class ProductService {
     private final ProductImagesRepository productImagesRepository;
     private final BrandRepository brandRepository;
     private final ModelMapper modelMapper;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public ProductService(ProductRepository productRepository, ProductImagesRepository productImagesRepository, BrandRepository brandRepository, ModelMapper modelMapper) {
         this.productRepository = productRepository;
@@ -41,6 +45,30 @@ public class ProductService {
         Optional<Product> optionalProduct = productRepository.findById(id);
         return (optionalProduct.isEmpty()) ? null : optionalProduct.get();
     };
+
+    public List<Brand> getBrands(){
+        return this.brandRepository.findAll();
+    }
+    public String addBrandImage(Brand brand, String imageLink) {
+        brand.setImg(imageLink);
+        brand = this.brandRepository.save(brand);
+        return imageLink;
+    }
+
+    public BrandDto addBrand(BrandDto brandDto){
+        Brand brand = this.modelMapper.map(brandDto, Brand.class);
+        brand.setPassword(passwordEncoder.encode(brandDto.getPassword()));
+        brandDto = this.modelMapper.map(this.brandRepository.save(brand), BrandDto.class);
+        return brandDto;
+    }
+
+    public Brand getBrand(Long brandId){
+        Optional<Brand> optionalBrand = this.brandRepository.findById(brandId);
+        if(optionalBrand.isEmpty()){
+            return null;
+        }
+        return optionalBrand.get();
+    }
 
     public ProductImages addProductImage(Product product, String image){
         ProductImages productImages = new ProductImages();
@@ -65,9 +93,9 @@ public class ProductService {
         return Math.ceil(totalPage);
     }
 
-    public ProductDto postProduct(Long id, ProductRequest productRequest){
+    public ProductDto postProduct(Long id, ProductRequest productRequest) {
         Optional<Brand> optionalBrand = this.brandRepository.findById(id);
-        if(optionalBrand.isEmpty()){
+        if (optionalBrand.isEmpty()) {
             return null;
         }
         Brand brand = optionalBrand.get();

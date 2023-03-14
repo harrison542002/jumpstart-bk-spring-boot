@@ -1,6 +1,7 @@
 package com.jumpstart.org.controllers;
 
 import com.jumpstart.org.models.ProductImages;
+import com.jumpstart.org.payload.BrandForPublic;
 import com.jumpstart.org.payload.ProductDto;
 import com.jumpstart.org.models.Product;
 import com.jumpstart.org.payload.ProductRequest;
@@ -17,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import javax.persistence.criteria.CriteriaBuilder;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -85,5 +88,33 @@ public class ProductController {
             return ResponseEntity.badRequest().body("Brand with id " + id + " does not exist!");
         }
         return ResponseEntity.ok(productDto);
+    }
+
+    @GetMapping("/single/{id}")
+    public  ResponseEntity<?> getProduct(
+            @PathVariable Long id
+    ){
+        Product product = this.productService.getProduct(id);
+        if(product == null){
+            return ResponseEntity.badRequest().body("Product with id: " + id + " does not exist!");
+        }
+        return ResponseEntity.ok(this.modelMapper.map(product, ProductDto.class));
+    }
+
+    @GetMapping("/multiple-products/{id}")
+    public ResponseEntity<?> getMultipleProducts(
+            @PathVariable String id
+    ){
+        String[] ids = id.split("\\+");
+        List<ProductDto> productDtos = new ArrayList<>();
+        for (String idd: ids) {
+            productDtos.add(this.modelMapper.map(this.productService.getProduct(Long.parseLong(idd)), ProductDto.class));
+        }
+        return ResponseEntity.ok(productDtos);
+    }
+
+    @GetMapping("/brands")
+    public ResponseEntity<?> getBrands() {
+        return ResponseEntity.ok(this.productService.getBrands().stream().map((brand) -> this.modelMapper.map(brand, BrandForPublic.class)));
     }
 }

@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Table(name = "customerorder")
@@ -25,4 +27,6 @@ public class CustomerOrder {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "uid", referencedColumnName = "uid")
     private User user;
+    @OneToMany(cascade = CascadeType.MERGE, fetch = FetchType.LAZY, mappedBy = "customerOrder")
+    private List<OrderProduct> orderProduct;
 }

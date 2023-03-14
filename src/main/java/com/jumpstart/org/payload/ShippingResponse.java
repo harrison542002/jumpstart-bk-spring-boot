@@ -1,17 +1,18 @@
-package com.jumpstart.org.models;
+package com.jumpstart.org.payload;
 
+import com.jumpstart.org.models.User;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
 
-@Entity
-@Table(name = "shippingaddress")
 @Getter
 @Setter
-public class ShippingAddress {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@AllArgsConstructor
+@NoArgsConstructor
+public class ShippingResponse {
     private Long sid;
     private String type;
     private String addressDetail;
@@ -19,7 +20,4 @@ public class ShippingAddress {
     private String fullName;
     private String city;
     private String phone;
-    @ManyToOne
-    @JoinColumn(name = "uid", referencedColumnName = "uid")
-    private User user;
 }

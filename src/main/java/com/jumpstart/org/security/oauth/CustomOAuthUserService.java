@@ -8,6 +8,7 @@ import com.jumpstart.org.repositories.RoleRepository;
 import com.jumpstart.org.repositories.UserRepository;
 import com.jumpstart.org.repositories.UserRoleRepository;
 import com.jumpstart.org.security.UserPrincipal;
+import com.jumpstart.org.services.CartServices;
 import com.jumpstart.org.status.AppConstants;
 import com.jumpstart.org.status.Provider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Optional;
@@ -36,6 +38,8 @@ public class CustomOAuthUserService extends DefaultOAuth2UserService {
 	
 	@Autowired
 	private UserRoleRepository userRoleRepository;
+	@Autowired
+	private CartServices cartServices;
 
 	@Override
 	public OAuth2User loadUser(OAuth2UserRequest userRequest)
@@ -54,6 +58,7 @@ public class CustomOAuthUserService extends DefaultOAuth2UserService {
 		}
 	}
 
+	@Transactional
 	private OAuth2User processOAuthUser(OAuth2UserRequest userRequest, OAuth2User oAuth2User) {
 		OAuthUserInfo oAuthUserInfo = OAuth2UserInfoFactory
 				.getOAuth2UserInfo(userRequest.getClientRegistration().getRegistrationId(), oAuth2User.getAttributes());
@@ -82,8 +87,9 @@ public class CustomOAuthUserService extends DefaultOAuth2UserService {
 		user.setProvider(Provider.valueOf(oAuth2UserRequest.getClientRegistration().getRegistrationId()).name());
 		user.setEmail(oAuth2UserInfo.getEmail());
 		user.setFirstName(oAuth2UserInfo.getName());
+		user.setLastName(oAuth2UserInfo.getName());
 		user = userRepository.save(user);
-
+		this.cartServices.createCart(user);
 		UserRole userRole = new UserRole();
 		userRole.setUser(user);
 		Role memberRole = roleRepository.findById(AppConstants.ROLE_MEMBER.longValue()).get();

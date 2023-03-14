@@ -21,9 +21,11 @@ public class User {
     private String provider;
     private String password;
     private String email;
-    @OneToOne(cascade=CascadeType.ALL, mappedBy = "user")
+    @OneToOne(cascade=CascadeType.MERGE, mappedBy = "user")
     private Cart cart;
+    @OneToMany(cascade = CascadeType.MERGE, mappedBy = "user", fetch = FetchType.EAGER)
+    private List<UserRole> userRoles;
     @LazyCollection(LazyCollectionOption.TRUE)
     @OneToMany(cascade = CascadeType.MERGE, mappedBy = "user")
-    private List<UserRole> userRoles;
+    private List<ShippingAddress> shippingAddresses;
 }
