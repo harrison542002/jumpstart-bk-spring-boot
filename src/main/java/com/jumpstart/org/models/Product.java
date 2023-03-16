@@ -33,4 +33,7 @@ public class Product {
     private List<CartProduct> cartProducts;
     @OneToMany(cascade = CascadeType.MERGE, fetch = FetchType.LAZY, mappedBy = "product")
     private List<ProductImages> productImages;
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE, mappedBy = "product")
+    private List<OrderProduct> orderProducts;
+
 }

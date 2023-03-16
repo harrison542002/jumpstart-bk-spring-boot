@@ -1,23 +1,19 @@
 package com.jumpstart.org.services;
 
-import com.jumpstart.org.models.Brand;
-import com.jumpstart.org.models.Product;
-import com.jumpstart.org.models.ProductImages;
+import com.jumpstart.org.models.*;
 import com.jumpstart.org.payload.BrandDto;
 import com.jumpstart.org.payload.ProductDto;
 import com.jumpstart.org.payload.ProductRequest;
-import com.jumpstart.org.repositories.BrandRepository;
-import com.jumpstart.org.repositories.ProductImagesRepository;
-import com.jumpstart.org.repositories.ProductRepository;
+import com.jumpstart.org.repositories.*;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,14 +26,21 @@ public class ProductService {
     private final ProductImagesRepository productImagesRepository;
     private final BrandRepository brandRepository;
     private final ModelMapper modelMapper;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final CartProductRepository cartProductRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final CloudinaryService cloudinaryService;
+    private final OrderProductRepository orderProductRepository;
 
-    public ProductService(ProductRepository productRepository, ProductImagesRepository productImagesRepository, BrandRepository brandRepository, ModelMapper modelMapper) {
+    public ProductService(ProductRepository productRepository, ProductImagesRepository productImagesRepository,
+                          BrandRepository brandRepository, ModelMapper modelMapper, CartProductRepository cartProductRepository, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, OrderProductRepository orderProductRepository) {
         this.productRepository = productRepository;
         this.productImagesRepository = productImagesRepository;
         this.brandRepository = brandRepository;
         this.modelMapper = modelMapper;
+        this.cartProductRepository = cartProductRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.cloudinaryService = cloudinaryService;
+        this.orderProductRepository = orderProductRepository;
     }
 
 
@@ -70,12 +73,56 @@ public class ProductService {
         return optionalBrand.get();
     }
 
+    public BrandDto editBrand(BrandDto brandDto){
+        Brand brand = this.brandRepository.findById(brandDto.getBid()).get();
+        brand.setPassword(this.passwordEncoder.encode(brandDto.getPassword()));
+        brand.setBrandEmail(brandDto.getBrandEmail());
+        brand.setBrandName(brandDto.getBrandName());
+        brand.setContact(brandDto.getContact());
+        brand.setDescription(brandDto.getDescription());
+        this.brandRepository.save(brand);
+        return this.modelMapper.map(brand, BrandDto.class);
+    }
+
+    public String editImage(Long id, MultipartFile image){
+        Brand brand = this.brandRepository.findById(id).get();
+        this.cloudinaryService.delete(brand.getImg());
+        String imageURL = this.cloudinaryService.upload(image);
+        brand.setImg(imageURL);
+        brand = this.brandRepository.save(brand);
+        return brand.getImg();
+    }
+
+    public void deleteProduct(Long id){
+        Product product = this.productRepository.findById(id).get();
+        List<CartProduct> cartProducts = product.getCartProducts();
+        List<ProductImages> productImages = product.getProductImages();
+        List<OrderProduct> orderProducts = product.getOrderProducts();
+        cartProducts.forEach(this.cartProductRepository::delete);
+        productImages.forEach((productImages1 -> {
+            this.cloudinaryService.delete(productImages1.getImg());
+            this.productImagesRepository.delete(productImages1);
+        }));
+        orderProducts.forEach(this.orderProductRepository::delete);
+        this.productRepository.delete(product);
+    }
+
     public ProductImages addProductImage(Product product, String image){
         ProductImages productImages = new ProductImages();
         productImages.setProduct(product);
         productImages.setImg(image);
         productImages = productImagesRepository.save(productImages);
         return productImages;
+    }
+
+    public ProductDto editProduct(ProductDto productDto){
+        Product product = this.getProduct(productDto.getPid());
+        product.setDescription(productDto.getDescription());
+        product.setCategory(productDto.getCategory());
+        product.setItemName(productDto.getItemName());
+        product.setMadeIn(productDto.getMadeIn());
+        product.setPrice(productDto.getPrice());
+        return this.modelMapper.map(productRepository.save(product), ProductDto.class);
     }
 
     public List<Product> getProducts(Integer pageNumber, Integer limit, Integer lowPrice, Integer highPrice, Integer fixedPrice,

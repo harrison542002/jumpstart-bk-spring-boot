@@ -2,12 +2,14 @@ package com.jumpstart.org.controllers;
 
 import com.google.gson.Gson;
 import com.jumpstart.org.exception.BadRequestException;
+import com.jumpstart.org.models.Brand;
 import com.jumpstart.org.models.Role;
 import com.jumpstart.org.models.User;
 import com.jumpstart.org.models.UserRole;
 import com.jumpstart.org.payload.AuthResponse;
 import com.jumpstart.org.payload.LoginRequest;
 import com.jumpstart.org.payload.SignUpRequest;
+import com.jumpstart.org.repositories.BrandRepository;
 import com.jumpstart.org.repositories.RoleRepository;
 import com.jumpstart.org.repositories.UserRepository;
 import com.jumpstart.org.repositories.UserRoleRepository;
@@ -30,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -49,6 +52,8 @@ public class AuthController {
     private JwtUtils jwtUtils;
     @Autowired
     private CartServices cartServices;
+    @Autowired
+    private BrandRepository brandRepository;
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest,
@@ -58,17 +63,27 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtUtils.createToken(authentication);
         String email = jwtUtils.getUserNameFromToken(token);
-        User user = this.userRepository.findByEmail(email).get();
+        Optional<User> user = this.userRepository.findByEmail(email);
+        Optional<Brand> brand = user.isEmpty() ? this.brandRepository.findByBrandEmail(email) : null;
         Cookie cookie = new Cookie("token", token);
         cookie.setPath("/");
         response.addCookie(cookie);
-        ArrayList<String> roles = new ArrayList<>();
-        user.getUserRoles().forEach((userRole -> roles.add(userRole.getRole().getRoleName())));
-        Gson gson = new Gson();
-        String stringRoles = URLEncoder.encode( gson.toJson(roles), "UTF-8");
-        Cookie cookie1 = new Cookie("roles", stringRoles);
-        cookie1.setPath("/");
-        response.addCookie(cookie1);
+
+        if(brand == null && user.isPresent()){
+            ArrayList<String> roles = new ArrayList<>();
+            user.get().getUserRoles().forEach((userRole -> roles.add(userRole.getRole().getRoleName())));
+            Gson gson = new Gson();
+            String stringRoles = URLEncoder.encode( gson.toJson(roles), "UTF-8");
+            Cookie cookie1 = new Cookie("roles", stringRoles);
+            cookie1.setPath("/");
+            response.addCookie(cookie1);
+        }
+        if(brand.isPresent()){
+            Cookie cookie1 = new Cookie("isBrand", "true");
+            cookie1.setPath("/");
+            response.addCookie(cookie1);
+        }
+
         return ResponseEntity.ok(new AuthResponse(token));
     }
 

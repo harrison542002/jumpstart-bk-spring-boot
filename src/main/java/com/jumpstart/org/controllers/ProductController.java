@@ -1,24 +1,23 @@
 package com.jumpstart.org.controllers;
 
+import com.jumpstart.org.models.Brand;
 import com.jumpstart.org.models.ProductImages;
-import com.jumpstart.org.payload.BrandForPublic;
-import com.jumpstart.org.payload.ProductDto;
+import com.jumpstart.org.payload.*;
 import com.jumpstart.org.models.Product;
-import com.jumpstart.org.payload.ProductRequest;
-import com.jumpstart.org.payload.ProductRespone;
+import com.jumpstart.org.repositories.BrandRepository;
 import com.jumpstart.org.services.CloudinaryService;
 import com.jumpstart.org.services.ProductService;
+import com.jumpstart.org.utils.JwtUtils;
+import org.apache.tomcat.util.http.parser.HttpParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.web.multipart.MultipartFile;
 
 
-import javax.persistence.criteria.CriteriaBuilder;
-import java.lang.reflect.Array;
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,12 +28,16 @@ public class ProductController {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final ProductService productService;
     private final CloudinaryService cloudinaryService;
-    @Autowired
-    private ModelMapper modelMapper;
+    private final ModelMapper modelMapper;
+    private final JwtUtils jwtUtils;
+    private final BrandRepository brandRepository;
 
-    public ProductController(ProductService productService, CloudinaryService cloudinaryService) {
+    public ProductController(ProductService productService, CloudinaryService cloudinaryService, ModelMapper modelMapper, JwtUtils jwtUtils, BrandRepository brandRepository) {
         this.productService = productService;
         this.cloudinaryService = cloudinaryService;
+        this.modelMapper = modelMapper;
+        this.jwtUtils = jwtUtils;
+        this.brandRepository = brandRepository;
     }
 
     @GetMapping(value = {"/all", "/all/{pageNumber}"})
@@ -79,14 +82,14 @@ public class ProductController {
         return ResponseEntity.ok(imageURL);
     }
 
-    @PostMapping("/postProduct/{id}")
+    @PostMapping("/postProduct")
     public ResponseEntity<?> postProduct(
-            @PathVariable Long id,
-            @RequestBody ProductRequest productRequest){
-        ProductDto productDto = this.productService.postProduct(id, productRequest);
-        if(productDto == null){
-            return ResponseEntity.badRequest().body("Brand with id " + id + " does not exist!");
-        }
+            @RequestBody ProductRequest productRequest,
+            HttpServletRequest request){
+        String token = jwtUtils.getJWTFromRequest(request);
+        String email = jwtUtils.getUserNameFromToken(token);
+        Brand brand = this.brandRepository.findByBrandEmail(email).get();
+        ProductDto productDto = this.productService.postProduct(brand.getBid(), productRequest);
         return ResponseEntity.ok(productDto);
     }
 
@@ -116,5 +119,44 @@ public class ProductController {
     @GetMapping("/brands")
     public ResponseEntity<?> getBrands() {
         return ResponseEntity.ok(this.productService.getBrands().stream().map((brand) -> this.modelMapper.map(brand, BrandForPublic.class)));
+    }
+
+    @PutMapping("/edit-brand")
+    public ResponseEntity<?> editBrand(@RequestBody BrandDto brandDto){
+        return ResponseEntity.ok(this.productService.editBrand(brandDto));
+    }
+
+    @PutMapping("/edit-brand-img/{id}")
+    public ResponseEntity<?> editBrandImg(@PathVariable Long id,
+                                          @RequestParam("file") MultipartFile image){
+        return ResponseEntity.ok(this.productService.editImage(id,image));
+    }
+
+    @GetMapping("/get-brand-info")
+    public ResponseEntity<?> getBrandInfo(HttpServletRequest request){
+        String token = jwtUtils.getJWTFromRequest(request);
+        String email = jwtUtils.getUserNameFromToken(token);
+        Brand brand = this.brandRepository.findByBrandEmail(email).get();
+        return ResponseEntity.ok(this.modelMapper.map(brand, BrandDto.class));
+    }
+
+    @GetMapping("/get-brand-product")
+    public ResponseEntity<?> getBrandProduct(HttpServletRequest request){
+        String token = jwtUtils.getJWTFromRequest(request);
+        String email = jwtUtils.getUserNameFromToken(token);
+        Brand brand = this.brandRepository.findByBrandEmail(email).get();
+        return ResponseEntity.ok(brand.getProducts().stream()
+                .map((product) -> this.modelMapper.map(product, ProductDto.class)).collect(Collectors.toList()));
+    }
+
+    @PutMapping("/edit-product")
+    public ResponseEntity<?> editProduct(HttpServletRequest request, @RequestBody ProductDto productDto){
+        return ResponseEntity.ok(this.productService.editProduct(productDto));
+    }
+
+    @DeleteMapping("/delete-product/{id}")
+    public ResponseEntity<?> deleteProduct(HttpServletRequest request, @PathVariable Long id){
+        this.productService.deleteProduct(id);
+        return ResponseEntity.ok("Delete Product Successfully!");
     }
 }

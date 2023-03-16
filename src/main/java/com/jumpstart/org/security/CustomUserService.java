@@ -29,7 +29,9 @@ public class CustomUserService implements UserDetailsService{
 			return UserPrincipal.createUser(optionalUser.get());
 		}
 		Optional<Brand> optionalBrand = brandRepository.findByBrandEmail(email);
+		System.out.println("Hello World " + optionalBrand.get().getBrandEmail());
 		if(optionalBrand.isPresent()){
+			System.out.println("Hello World");
 			return UserPrincipal.createBrand(optionalBrand.get());
 		}
 		throw new UsernameNotFoundException("Email: " + email + " does not exist in database");
