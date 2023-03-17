@@ -19,4 +19,9 @@ This project is built with Spring Boot framework.
 - Cloudinary
 
 ## Project Status
-<b>Still In Process .....</b>
+
+<b>Completed</b>
+
+## Find project frontend implementation from below link
+
+- https://github.com/harrison542002/jumpstart-ecommerce
