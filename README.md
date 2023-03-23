@@ -24,7 +24,7 @@ This project is built with Spring Boot framework.
 
 ## Prerequisite Before Run 
 
-<b>Create Database</b>
+<b>Open MySQL Command Prompt and Run below code to create database</b>
 
 ```mysql
 create database jumpstart
