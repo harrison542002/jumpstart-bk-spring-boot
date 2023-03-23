@@ -30,6 +30,13 @@ This project is built with Spring Boot framework.
 create database jumpstart
 ```
 
+<b>Set Environment Variables in your IDE For Cloudinary</b>
+```
+cloudName = <Your Cloudinary Cloud Name>
+secrete = <Your Cloudinary API Code>
+key = <Your Cloudinary API Secrete>
+```
+
 ## Where To Check
 
 After running application, enter below link in browser
