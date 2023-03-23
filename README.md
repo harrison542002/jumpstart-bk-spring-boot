@@ -22,6 +22,14 @@ This project is built with Spring Boot framework.
 
 <b>Completed</b>
 
+## Prerequisite Before Run 
+
+<b>Create Database</b>
+
+```mysql
+create database jumpstart
+```
+
 ## Find project frontend implementation from below link
 
 - https://github.com/harrison542002/jumpstart-ecommerce
