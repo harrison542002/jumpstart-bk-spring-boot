@@ -30,6 +30,14 @@ This project is built with Spring Boot framework.
 create database jumpstart
 ```
 
+## Where To Check
+
+After running application, enter below link in browser
+
+```
+http://localhost:8080/
+```
+
 ## Find project frontend implementation from below link
 
 - https://github.com/harrison542002/jumpstart-ecommerce
